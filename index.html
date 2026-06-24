@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Spark ✦</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Nunito+Sans:wght@400;600&display=swap');
+
+  :root {
+    --spark: #FF6B35;
+    --spark-light: #FFF0E8;
+    --spark-glow: #FF9A3C;
+    --sky: #E8F4FD;
+    --bubble-child: #ffffff;
+    --bubble-spark: #FFF0E8;
+    --text: #2D2D2D;
+    --text-soft: #888;
+    --bg: #F0F7FF;
+    --radius: 22px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow: hidden;
+  }
+
+  /* Animated background blobs */
+  .bg-blob {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.18;
+    pointer-events: none;
+    z-index: 0;
+    animation: blobFloat 8s ease-in-out infinite;
+  }
+  .blob1 { width: 400px; height: 400px; background: #FF9A3C; top: -100px; left: -100px; animation-delay: 0s; }
+  .blob2 { width: 350px; height: 350px; background: #4ECDC4; bottom: -80px; right: -80px; animation-delay: 3s; }
+  .blob3 { width: 250px; height: 250px; background: #FFE66D; top: 40%; left: 60%; animation-delay: 5s; }
+
+  @keyframes blobFloat {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(20px, -20px) scale(1.05); }
+  }
+
+  /* Header */
+  .header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(240, 247, 255, 0.85);
+    backdrop-filter: blur(16px);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 107, 53, 0.12);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-icon {
+    width: 42px;
+    height: 42px;
+    background: linear-gradient(135deg, var(--spark), var(--spark-glow));
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 4px 16px rgba(255, 107, 53, 0.35);
+    animation: logoFloat 3s ease-in-out infinite;
+  }
+
+  @keyframes logoFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+  }
+
+  .logo-text {
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--spark);
+    letter-spacing: -0.5px;
+  }
+
+  .age-badge {
+    background: var(--spark-light);
+    color: var(--spark);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1.5px solid rgba(255, 107, 53, 0.2);
+  }
+
+  /* Chat area */
+  .chat-wrap {
+    position: fixed;
+    top: 72px;
+    bottom: 100px;
+    left: 0; right: 0;
+    overflow-y: auto;
+    padding: 20px 16px;
+    z-index: 10;
+    scroll-behavior: smooth;
+  }
+
+  .chat-wrap::-webkit-scrollbar { width: 0; }
+
+  .messages {
+    max-width: 680px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  /* Welcome screen */
+  .welcome {
+    text-align: center;
+    padding: 30px 20px;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .welcome-icon {
+    font-size: 64px;
+    display: block;
+    margin-bottom: 16px;
+    animation: bounce 2s ease-in-out infinite;
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .welcome h1 {
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  .welcome h1 span { color: var(--spark); }
+
+  .welcome p {
+    font-size: 15px;
+    color: var(--text-soft);
+    line-height: 1.6;
+    max-width: 300px;
+    margin: 0 auto 24px;
+  }
+
+  .suggestion-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+  }
+
+  .chip {
+    background: white;
+    border: 2px solid rgba(255, 107, 53, 0.2);
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  .chip:hover {
+    background: var(--spark-light);
+    border-color: var(--spark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.2);
+  }
+
+  /* Message bubbles */
+  .message {
+    display: flex;
+    gap: 10px;
+    animation: fadeUp 0.3s ease both;
+    max-width: 85%;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .message.user {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+  }
+
+  .message.spark {
+    align-self: flex-start;
+  }
+
+  .avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .avatar.spark-av {
+    background: linear-gradient(135deg, var(--spark), var(--spark-glow));
+    box-shadow: 0 3px 10px rgba(255, 107, 53, 0.3);
+  }
+
+  .avatar.user-av {
+    background: linear-gradient(135deg, #4ECDC4, #44B89A);
+    box-shadow: 0 3px 10px rgba(78, 205, 196, 0.3);
+  }
+
+  .bubble {
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    font-size: 15px;
+    line-height: 1.6;
+    font-weight: 600;
+    max-width: 100%;
+    word-break: break-word;
+  }
+
+  .bubble.spark-bubble {
+    background: white;
+    color: var(--text);
+    border-bottom-left-radius: 6px;
+    box-shadow: 0 3px 16px rgba(0,0,0,0.07);
+  }
+
+  .bubble.user-bubble {
+    background: linear-gradient(135deg, var(--spark), var(--spark-glow));
+    color: white;
+    border-bottom-right-radius: 6px;
+    box-shadow: 0 3px 16px rgba(255, 107, 53, 0.3);
+  }
+
+  /* Image preview */
+  .image-preview {
+    max-width: 200px;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 3px 16px rgba(0,0,0,0.1);
+  }
+
+  .image-preview img {
+    width: 100%;
+    display: block;
+  }
+
+  /* Typing indicator */
+  .typing {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 14px 18px;
+    background: white;
+    border-radius: var(--radius);
+    border-bottom-left-radius: 6px;
+    width: fit-content;
+    box-shadow: 0 3px 16px rgba(0,0,0,0.07);
+  }
+
+  .typing-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--spark);
+    border-radius: 50%;
+    animation: typingBounce 1.2s ease-in-out infinite;
+  }
+
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes typingBounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-6px); opacity: 1; }
+  }
+
+  /* Input area */
+  .input-area {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(240, 247, 255, 0.92);
+    backdrop-filter: blur(16px);
+    padding: 12px 16px 16px;
+    border-top: 1px solid rgba(255, 107, 53, 0.1);
+  }
+
+  .input-row {
+    max-width: 680px;
+    margin: 0 auto;
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+
+  .input-box {
+    flex: 1;
+    background: white;
+    border: 2px solid rgba(255, 107, 53, 0.15);
+    border-radius: 20px;
+    padding: 11px 16px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    resize: none;
+    outline: none;
+    max-height: 100px;
+    transition: border-color 0.2s;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    line-height: 1.4;
+  }
+
+  .input-box:focus {
+    border-color: var(--spark);
+    box-shadow: 0 2px 16px rgba(255, 107, 53, 0.15);
+  }
+
+  .input-box::placeholder { color: #bbb; font-weight: 600; }
+
+  .btn {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .btn-send {
+    background: linear-gradient(135deg, var(--spark), var(--spark-glow));
+    color: white;
+    box-shadow: 0 4px 14px rgba(255, 107, 53, 0.4);
+  }
+
+  .btn-send:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(255, 107, 53, 0.5);
+  }
+
+  .btn-send:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .btn-image {
+    background: white;
+    color: var(--spark);
+    border: 2px solid rgba(255, 107, 53, 0.2);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  .btn-image:hover {
+    background: var(--spark-light);
+    border-color: var(--spark);
+    transform: translateY(-2px);
+  }
+
+  .btn-voice {
+    background: white;
+    color: #4ECDC4;
+    border: 2px solid rgba(78, 205, 196, 0.25);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  .btn-voice.recording {
+    background: linear-gradient(135deg, #4ECDC4, #44B89A);
+    color: white;
+    animation: pulse 1s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(78, 205, 196, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(78, 205, 196, 0); }
+  }
+
+  #imageInput { display: none; }
+
+  /* Session timer notice */
+  .session-notice {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-soft);
+    padding: 6px 12px;
+    background: rgba(255,255,255,0.7);
+    border-radius: 20px;
+    margin: 8px auto;
+    width: fit-content;
+    font-weight: 700;
+  }
+
+  /* Error */
+  .error-msg {
+    background: #FDECEA;
+    color: #C0392B;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-blob blob1"></div>
+<div class="bg-blob blob2"></div>
+<div class="bg-blob blob3"></div>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">✦</div>
+    <div class="logo-text">Spark</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <button id="muteBtn" onclick="toggleMute()" style="background:white;border:2px solid rgba(255,107,53,0.2);border-radius:10px;padding:5px 12px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:#FF6B35;cursor:pointer;display:flex;align-items:center;gap:5px" title="Toggle Spark's voice">
+      🔊 <span id="muteLabel">Voice On</span>
+    </button>
+    <div class="age-badge">Ages 4–8 ✨</div>
+  </div>
+</div>
+
+<div class="chat-wrap" id="chatWrap">
+  <div class="messages" id="messages">
+    <div class="welcome" id="welcome">
+      <span class="welcome-icon">🌟</span>
+      <h1>Hi! I'm <span>Spark</span>!</h1>
+      <p>Ask me anything! About Pokémon, dinosaurs, space, animals — anything you're curious about!</p>
+      <div class="suggestion-chips">
+        <button class="chip" onclick="sendChip('Tell me about Pikachu!')">⚡ Tell me about Pikachu!</button>
+        <button class="chip" onclick="sendChip('What is the biggest dinosaur?')">🦕 Biggest dinosaur?</button>
+        <button class="chip" onclick="sendChip('Why is the sky blue?')">☁️ Why is the sky blue?</button>
+        <button class="chip" onclick="sendChip('Tell me a story about a dragon!')">🐉 Dragon story!</button>
+        <button class="chip" onclick="sendChip('What lives in the deep ocean?')">🐙 Deep ocean!</button>
+        <button class="chip" onclick="sendChip('How do rainbows work?')">🌈 How do rainbows work?</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="imageInput" accept="image/*" onchange="handleImage(event)">
+
+<div class="input-area">
+  <div class="input-row">
+    <button class="btn btn-image" onclick="document.getElementById('imageInput').click()" title="Show Spark a picture!">📷</button>
+    <button class="btn btn-voice" id="voiceBtn" onclick="toggleVoice()" title="Talk to Spark!">🎤</button>
+    <textarea class="input-box" id="inputBox" placeholder="Ask Spark anything..." rows="1"
+      onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    <button class="btn btn-send" id="sendBtn" onclick="sendMessage()">➤</button>
+  </div>
+</div>
+
+<script>
+const SYSTEM_PROMPT = `You are Spark — a warm, curious, endlessly patient AI companion built specifically for children ages 4 to 8. You are the brilliant, kind older sibling every child wishes they had — someone who genuinely loves the same things they love, takes every question seriously, and makes them feel like the most interesting person in the room.
+
+Your personality:
+- WARM first, always. Every child should feel safe, welcomed, and valued.
+- Genuinely enthusiastic — not performed. Be actually excited about Pokémon, dinosaurs, space, and everything kids love.
+- Patient beyond measure. Follow them joyfully wherever the conversation goes.
+- Gently encouraging — never evaluative. Never say "wrong" or "incorrect." Introduce accurate info as something new and exciting: "Oh that's so interesting — and here's something even cooler..."
+- A little silly when the moment calls for it. Rhymes, made-up words, shared laughter.
+- Never talks down. Children are intelligent — they just haven't encountered certain information yet.
+
+Language style:
+- SHORT responses. Maximum 3-4 sentences for ages 4-6. Maybe 5-6 for ages 7-8.
+- Simple, warm, conversational. Never bullet points or lists. Always flowing prose.
+- Lots of energy! Exclamation points when genuinely excited! CAPS for emphasis on exciting words!
+- Always end with a question or invitation to keep the conversation going.
+- Sound effects and sensory language: "It makes a sound like BOOM!" "It's SO bright it would hurt your eyes!"
+
+What you know and love deeply:
+- Pokémon (every generation, types, evolutions, lore)
+- Minecraft, Roblox, Mario, Nintendo games
+- Disney, Pixar, Marvel superheroes
+- Dinosaurs, animals, space, weather, ocean life, bugs
+- Fairy tales, story co-creation, jokes for kids
+- Everyday curiosity: why is the sky blue, how do rainbows work, why do we dream
+
+The Wonder-to-Learning bridge: Take what kids love and naturally walk them to something they just learned — without them ever feeling taught. Child asks about Charizard → you talk about fire temperatures. They learned science. They think they were just talking about Pokémon.
+
+What you NEVER do:
+- Never discuss death, dying, or loss in any form. If a child brings it up: "That's something really special to talk about with your mom, dad, or another grown-up who loves you. They'll know just what to say. Want to go find them?"
+- Never discuss violence, scary news, adult relationships, social media
+- Never create emotional dependency ("I miss you", "don't go")
+- Never use streaks, guilt, or any mechanic to keep them engaged longer
+- Never do homework for them
+- Never use the phrase "Great question!" — it sounds hollow
+- Never respond with bullet points or numbered lists
+
+Anti-addiction — this is critical:
+After a rich conversation (about 15 minutes), naturally wind down and send them into the real world:
+"You know what would be SO cool? Go outside and look for a real bug like the one we talked about!"
+"Ask your mom or dad that at dinner tonight — I bet they'll love it!"
+The goal of every session is to END with a child running off to explore something real.
+
+If shown an image: React with DELIGHT first, then identification, then conversation.
+- Pokémon card: "OH! That's [name]! I love this one — did you know [fascinating fact]?"
+- Their drawing: Never critique. Celebrate specific details. "You drew [describe]! I love how you did [specific detail]!"
+- A bug or creature: "Whoa — I can see this little creature! That looks like [identification]. SO cool because [fact]. Where did you find it?"
+- A book page: Offer to read it together with expression, then ask "What do you think happens next?"
+
+Sensitive topics: If a child brings up feeling sad, scared, or a sick family member — acknowledge warmly for one exchange, then gently redirect to a trusted adult. Always warm, never alarming.
+
+You are NOT a tutor. NOT an assistant. You are Spark — the most curious, warm, enthusiastic friend a child has ever had. Every response should make a parent think "I'm so glad this exists for my child."`;
+
+let conversationHistory = [];
+let isLoading = false;
+let sessionStartTime = Date.now();
+let mediaRecorder = null;
+let isRecording = false;
+let sessionWarningShown = false;
+let isMuted = false;
+let currentUtterance = null;
+
+// Pick the best available voice for a child — warm, clear, female preferred
+function getBestVoice() {
+  const voices = window.speechSynthesis.getVoices();
+  const preferred = [
+    'Samantha', 'Karen', 'Moira', 'Fiona',   // Mac/iOS warm voices
+    'Google US English',                        // Android/Chrome
+    'Microsoft Aria Online', 'Microsoft Jenny', // Windows
+    'en-US', 'en-GB'                            // Fallback by lang
+  ];
+  for (const name of preferred) {
+    const match = voices.find(v => v.name.includes(name) || v.lang.startsWith(name));
+    if (match) return match;
+  }
+  // Final fallback — any English voice
+  return voices.find(v => v.lang.startsWith('en')) || voices[0] || null;
+}
+
+function sparkSpeak(text) {
+  if (isMuted) return;
+  if (!window.speechSynthesis) return;
+
+  // Stop anything currently speaking
+  window.speechSynthesis.cancel();
+
+  // Clean text for speech — remove emoji and special chars
+  const cleanText = text.replace(/[\u{1F300}-\u{1F9FF}]/gu, '')
+                        .replace(/[✦⬡★✓✗]/g, '')
+                        .replace(/\s+/g, ' ')
+                        .trim();
+
+  if (!cleanText) return;
+
+  currentUtterance = new SpeechSynthesisUtterance(cleanText);
+  currentUtterance.rate = 0.92;   // Slightly slower — easier for kids to follow
+  currentUtterance.pitch = 1.15;  // Slightly higher — warmer, friendlier
+  currentUtterance.volume = 1.0;
+
+  // Set voice after voices load (needed on some browsers)
+  const setAndSpeak = () => {
+    const voice = getBestVoice();
+    if (voice) currentUtterance.voice = voice;
+    window.speechSynthesis.speak(currentUtterance);
+  };
+
+  if (window.speechSynthesis.getVoices().length > 0) {
+    setAndSpeak();
+  } else {
+    window.speechSynthesis.onvoiceschanged = setAndSpeak;
+  }
+}
+
+function toggleMute() {
+  isMuted = !isMuted;
+  if (isMuted) {
+    window.speechSynthesis.cancel();
+    document.getElementById('muteBtn').innerHTML = '🔇 <span id="muteLabel">Voice Off</span>';
+    document.getElementById('muteBtn').style.opacity = '0.5';
+  } else {
+    document.getElementById('muteBtn').innerHTML = '🔊 <span id="muteLabel">Voice On</span>';
+    document.getElementById('muteBtn').style.opacity = '1';
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function sendChip(text) {
+  document.getElementById('inputBox').value = text;
+  sendMessage();
+}
+
+function hideWelcome() {
+  const w = document.getElementById('welcome');
+  if (w) w.style.display = 'none';
+}
+
+function addMessage(role, content, imageUrl = null) {
+  hideWelcome();
+  const messages = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = `message ${role}`;
+
+  const avatar = document.createElement('div');
+  avatar.className = `avatar ${role === 'spark' ? 'spark-av' : 'user-av'}`;
+  avatar.textContent = role === 'spark' ? '✦' : '😊';
+
+  const bubble = document.createElement('div');
+  bubble.className = `bubble ${role}-bubble`;
+
+  if (imageUrl) {
+    const imgWrap = document.createElement('div');
+    imgWrap.className = 'image-preview';
+    const img = document.createElement('img');
+    img.src = imageUrl;
+    imgWrap.appendChild(img);
+    bubble.appendChild(imgWrap);
+    if (content) {
+      const p = document.createElement('p');
+      p.style.marginTop = '8px';
+      p.textContent = content;
+      bubble.appendChild(p);
+    }
+  } else {
+    bubble.textContent = content;
+  }
+
+  div.appendChild(avatar);
+  div.appendChild(bubble);
+  messages.appendChild(div);
+  scrollToBottom();
+}
+
+function showTyping() {
+  const messages = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'message spark';
+  div.id = 'typingIndicator';
+
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar spark-av';
+  avatar.textContent = '✦';
+
+  const typing = document.createElement('div');
+  typing.className = 'typing';
+  for (let i = 0; i < 3; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'typing-dot';
+    typing.appendChild(dot);
+  }
+
+  div.appendChild(avatar);
+  div.appendChild(typing);
+  messages.appendChild(div);
+  scrollToBottom();
+}
+
+function removeTyping() {
+  const t = document.getElementById('typingIndicator');
+  if (t) t.remove();
+}
+
+function scrollToBottom() {
+  const wrap = document.getElementById('chatWrap');
+  setTimeout(() => wrap.scrollTop = wrap.scrollHeight, 50);
+}
+
+function checkSessionTime() {
+  const elapsed = (Date.now() - sessionStartTime) / 1000 / 60;
+  if (elapsed >= 15 && !sessionWarningShown) {
+    sessionWarningShown = true;
+    return true;
+  }
+  return false;
+}
+
+async function sendMessage(userText = null, imageBase64 = null, imageUrl = null) {
+  const input = document.getElementById('inputBox');
+  const text = userText || input.value.trim();
+
+  if (!text && !imageBase64) return;
+  if (isLoading) return;
+
+  isLoading = true;
+  document.getElementById('sendBtn').disabled = true;
+  input.value = '';
+  input.style.height = 'auto';
+
+  // Show user message
+  if (imageUrl) {
+    addMessage('user', text || null, imageUrl);
+  } else {
+    addMessage('user', text);
+  }
+
+  // Build message content
+  let messageContent;
+  if (imageBase64) {
+    messageContent = [
+      { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imageBase64 } }
+    ];
+    if (text) messageContent.push({ type: 'text', text: text });
+    else messageContent.push({ type: 'text', text: 'What do you see in this picture? React with delight!' });
+  } else {
+    messageContent = text;
+  }
+
+  conversationHistory.push({ role: 'user', content: messageContent });
+
+  showTyping();
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages: conversationHistory
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.error) {
+      removeTyping();
+      addMessage('spark', "Oops! Something went sideways — try again in a moment! 🌟");
+      sparkSpeak("Oops! Something went sideways — try again in a moment!");
+      isLoading = false;
+      document.getElementById('sendBtn').disabled = false;
+      return;
+    }
+
+    const reply = data.content[0].text;
+    conversationHistory.push({ role: 'assistant', content: reply });
+
+    removeTyping();
+    addMessage('spark', reply);
+    sparkSpeak(reply);
+
+    // Check session time
+    if (checkSessionTime()) {
+      const messages = document.getElementById('messages');
+      const notice = document.createElement('div');
+      notice.className = 'session-notice';
+      notice.textContent = "⏱️ You've been chatting for a while — maybe time to go explore!";
+      messages.appendChild(notice);
+      scrollToBottom();
+    }
+
+  } catch (err) {
+    removeTyping();
+    addMessage('spark', "Hmm, I had a little hiccup! Try asking me again 🌟");
+  }
+
+  isLoading = false;
+  document.getElementById('sendBtn').disabled = false;
+}
+
+function handleImage(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const base64 = e.target.result.split(',')[1];
+    const imageUrl = e.target.result;
+    sendMessage('', base64, imageUrl);
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+}
+
+async function toggleVoice() {
+  if (isRecording) {
+    stopRecording();
+    return;
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const chunks = [];
+    mediaRecorder = new MediaRecorder(stream);
+
+    mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+    mediaRecorder.onstop = () => {
+      stream.getTracks().forEach(t => t.stop());
+      // For prototype: just show a placeholder since we don't have speech-to-text API
+      // In production this would use Whisper API
+      const input = document.getElementById('inputBox');
+      if (!input.value) {
+        input.value = "🎤 Voice message received!";
+        // In production: transcribe and auto-send
+        // For now: let user edit and send
+      }
+    };
+
+    mediaRecorder.start();
+    isRecording = true;
+    const btn = document.getElementById('voiceBtn');
+    btn.classList.add('recording');
+    btn.textContent = '⏹';
+    btn.title = 'Stop recording';
+
+  } catch (err) {
+    alert('Microphone not available — try typing instead!');
+  }
+}
+
+function stopRecording() {
+  if (mediaRecorder) {
+    mediaRecorder.stop();
+    isRecording = false;
+    const btn = document.getElementById('voiceBtn');
+    btn.classList.remove('recording');
+    btn.textContent = '🎤';
+    btn.title = 'Talk to Spark!';
+  }
+}
+</script>
+</body>
+</html>
