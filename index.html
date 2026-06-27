@@ -189,7 +189,7 @@
     </div>
   </div>
 
-  <input type="file" id="imageInput" accept="image/*" onchange="handleImage(event)">
+  <input type="file" id="imageInput" accept="image/*" capture="environment" onchange="handleImage(event)">
   <div class="input-area">
     <div class="input-row">
       <button class="btn btn-image" onclick="document.getElementById('imageInput').click()" title="Show Spark a picture!">📷</button>
@@ -255,7 +255,6 @@ let conversationHistory = [];
 let isLoading = false;
 let sessionStartTime = Date.now();
 let isRecording = false;
-let mediaRecorder = null;
 let isMuted = false;
 let sessionWarningShown = false;
 
@@ -404,26 +403,48 @@ function handleImage(event) {
   reader.readAsDataURL(file); event.target.value='';
 }
 
-async function toggleVoice() {
-  if(isRecording){stopRecording();return;}
-  try {
-    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
-    const chunks=[];
-    mediaRecorder=new MediaRecorder(stream);
-    mediaRecorder.ondataavailable=(e)=>chunks.push(e.data);
-    mediaRecorder.onstop=()=>{
-      stream.getTracks().forEach(t=>t.stop());
-      const input=document.getElementById('inputBox');
-      if(!input.value) input.value="🎤 (type your question here)";
-    };
-    mediaRecorder.start(); isRecording=true;
-    const btn=document.getElementById('voiceBtn'); btn.classList.add('recording'); btn.textContent='⏹';
-  } catch(err){ alert('Microphone not available — try typing instead!'); }
+let recognition = null;
+
+function toggleVoice() {
+  if (isRecording) { stopListening(); return; }
+  startListening();
 }
 
-function stopRecording() {
-  if(mediaRecorder){mediaRecorder.stop();isRecording=false;}
-  const btn=document.getElementById('voiceBtn'); btn.classList.remove('recording'); btn.textContent='🎤';
+function startListening() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    alert('Voice not supported — try Chrome for best results!');
+    return;
+  }
+  recognition = new SpeechRecognition();
+  recognition.lang = 'en-US';
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+  recognition.onstart = () => {
+    isRecording = true;
+    const btn = document.getElementById('voiceBtn');
+    btn.classList.add('recording'); btn.textContent = '⏹';
+    document.getElementById('inputBox').placeholder = '🎤 Listening...';
+  };
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    stopListening();
+    if (transcript.trim()) sendMessage(transcript.trim());
+  };
+  recognition.onerror = (event) => {
+    stopListening();
+    if (event.error === 'not-allowed') alert('Microphone permission needed — please allow and try again.');
+  };
+  recognition.onend = () => { stopListening(); };
+  recognition.start();
+}
+
+function stopListening() {
+  if (recognition) { try { recognition.stop(); } catch(e){} recognition = null; }
+  isRecording = false;
+  const btn = document.getElementById('voiceBtn');
+  btn.classList.remove('recording'); btn.textContent = '🎤';
+  document.getElementById('inputBox').placeholder = 'Ask Spark anything...';
 }
 </script>
 </body>
