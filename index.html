@@ -51,7 +51,7 @@
   .key-error { color: #E74C3C; font-size: 12px; font-weight: 700; margin-top: 8px; display: none; }
 
   /* MAIN APP */
-  #appScreen { display: none; width: 100%; min-height: 100vh; }
+  #appScreen { display: none; width: 100%; height: 100vh; flex-direction: column; }
 
   .header {
     position: fixed; top: 0; left: 0; right: 0; z-index: 100;
@@ -189,7 +189,7 @@
     </div>
   </div>
 
-  <input type="file" id="imageInput" accept="image/*" capture="environment" onchange="handleImage(event)">
+  <input type="file" id="imageInput" accept="image/*" onchange="handleImage(event)">
   <div class="input-area">
     <div class="input-row">
       <button class="btn btn-image" onclick="document.getElementById('imageInput').click()" title="Show Spark a picture!">📷</button>
@@ -255,22 +255,20 @@ let conversationHistory = [];
 let isLoading = false;
 let sessionStartTime = Date.now();
 let isRecording = false;
-let recognition = null;
+let mediaRecorder = null;
 let isMuted = false;
 let sessionWarningShown = false;
 
 function startSpark() {
   const key = document.getElementById('keyInput').value.trim();
-  if (!key || key.length < 20) {
+  if (!key.startsWith('sk-ant-')) {
     document.getElementById('keyError').style.display = 'block';
-    document.getElementById('keyError').textContent = 'Key too short — please paste your full API key';
     return;
   }
   API_KEY = key;
   document.getElementById('keyScreen').style.display = 'none';
-  const app = document.getElementById('appScreen');
-  app.style.display = 'block';
-  
+  document.getElementById('appScreen').style.display = 'flex';
+  document.getElementById('appScreen').style.flexDirection = 'column';
 }
 
 document.getElementById('keyInput').addEventListener('keydown', function(e) {
@@ -406,68 +404,26 @@ function handleImage(event) {
   reader.readAsDataURL(file); event.target.value='';
 }
 
-let recognition = null;
-
-function toggleVoice() {
-  if (isRecording) { stopListening(); return; }
-  startListening();
+async function toggleVoice() {
+  if(isRecording){stopRecording();return;}
+  try {
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    const chunks=[];
+    mediaRecorder=new MediaRecorder(stream);
+    mediaRecorder.ondataavailable=(e)=>chunks.push(e.data);
+    mediaRecorder.onstop=()=>{
+      stream.getTracks().forEach(t=>t.stop());
+      const input=document.getElementById('inputBox');
+      if(!input.value) input.value="🎤 (type your question here)";
+    };
+    mediaRecorder.start(); isRecording=true;
+    const btn=document.getElementById('voiceBtn'); btn.classList.add('recording'); btn.textContent='⏹';
+  } catch(err){ alert('Microphone not available — try typing instead!'); }
 }
 
-function startListening() {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    alert('Voice not supported on this browser — try Chrome for best results!');
-    return;
-  }
-
-  recognition = new SpeechRecognition();
-  recognition.lang = 'en-US';
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
-
-  recognition.onstart = () => {
-    isRecording = true;
-    const btn = document.getElementById('voiceBtn');
-    btn.classList.add('recording');
-    btn.textContent = '⏹';
-    btn.title = 'Tap to stop listening';
-    // Show listening indicator in input box
-    document.getElementById('inputBox').placeholder = '🎤 Listening...';
-  };
-
-  recognition.onresult = (event) => {
-    const transcript = event.results[0][0].transcript;
-    // Auto-send what the child said directly to Spark
-    stopListening();
-    if (transcript.trim()) {
-      sendMessage(transcript.trim());
-    }
-  };
-
-  recognition.onerror = (event) => {
-    stopListening();
-    if (event.error === 'no-speech') {
-      // Silently reset — child just didn't speak
-    } else if (event.error === 'not-allowed') {
-      alert('Microphone permission needed — please allow microphone access and try again.');
-    }
-  };
-
-  recognition.onend = () => {
-    stopListening();
-  };
-
-  recognition.start();
-}
-
-function stopListening() {
-  if (recognition) { try { recognition.stop(); } catch(e){} recognition = null; }
-  isRecording = false;
-  const btn = document.getElementById('voiceBtn');
-  btn.classList.remove('recording');
-  btn.textContent = '🎤';
-  btn.title = 'Talk to Spark!';
-  document.getElementById('inputBox').placeholder = 'Ask Spark anything...';
+function stopRecording() {
+  if(mediaRecorder){mediaRecorder.stop();isRecording=false;}
+  const btn=document.getElementById('voiceBtn'); btn.classList.remove('recording'); btn.textContent='🎤';
 }
 </script>
 </body>
