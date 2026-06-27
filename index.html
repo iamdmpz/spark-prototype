@@ -51,7 +51,7 @@
   .key-error { color: #E74C3C; font-size: 12px; font-weight: 700; margin-top: 8px; display: none; }
 
   /* MAIN APP */
-  #appScreen { display: none; width: 100%; height: 100vh; flex-direction: column; }
+  #appScreen { display: none; width: 100%; min-height: 100vh; }
 
   .header {
     position: fixed; top: 0; left: 0; right: 0; z-index: 100;
@@ -269,8 +269,8 @@ function startSpark() {
   API_KEY = key;
   document.getElementById('keyScreen').style.display = 'none';
   const app = document.getElementById('appScreen');
-  app.style.display = 'flex';
-  app.style.flexDirection = 'column';
+  app.style.display = 'block';
+  
 }
 
 document.getElementById('keyInput').addEventListener('keydown', function(e) {
