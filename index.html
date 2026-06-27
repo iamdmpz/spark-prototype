@@ -261,14 +261,16 @@ let sessionWarningShown = false;
 
 function startSpark() {
   const key = document.getElementById('keyInput').value.trim();
-  if (!key.startsWith('sk-ant-')) {
+  if (!key || key.length < 20) {
     document.getElementById('keyError').style.display = 'block';
+    document.getElementById('keyError').textContent = 'Key too short — please paste your full API key';
     return;
   }
   API_KEY = key;
   document.getElementById('keyScreen').style.display = 'none';
-  document.getElementById('appScreen').style.display = 'flex';
-  document.getElementById('appScreen').style.flexDirection = 'column';
+  const app = document.getElementById('appScreen');
+  app.style.display = 'flex';
+  app.style.flexDirection = 'column';
 }
 
 document.getElementById('keyInput').addEventListener('keydown', function(e) {
